@@ -1,9 +1,7 @@
 (ns app.core
-  (:require [clojure.browser.repl :as repl]))
-
-;; (defonce conn
-;;   (repl/connect "http://localhost:9000/repl"))
+  (:require
+    [app.client :as client]))
 
 (enable-console-print!)
 
-(println "Hello world!")
+(client/rss)
