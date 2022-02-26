@@ -1,6 +1,7 @@
 (ns app.view.core
   (:require
     [app.client :as client]
+    [app.controller.core :as controller]
     clojure.pprint)
   (:require-macros
     [app.macros :as m]))
@@ -14,7 +15,7 @@
        :onclick f} children])
 
 (defn news-item [{:keys [title link description enclosure]}]
-  (let [click-article #(prn 'article link)]
+  (let [click-article #(controller/view-article link)]
     [:div
      (a-f click-article [:h3 title])
      (a-f click-article [:img {:src (:url enclosure)}])
