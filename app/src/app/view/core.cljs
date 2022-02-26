@@ -25,7 +25,8 @@
   [:div
    (a-f #(js/location.reload)
         [:img {:src (:url image)}])
-   (map news-item item)])
+   [:div#subsection.poos.wees
+    (map news-item item)]])
 
 (defn home []
   (if js/window.IS_ELECTRON
