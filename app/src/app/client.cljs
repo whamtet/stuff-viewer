@@ -1,4 +1,6 @@
 (ns app.client
+  (:require
+    [clojure.walk :as walk])
   (:require-macros
     [app.macros :as m])
   (:import
@@ -18,12 +20,38 @@
    (list*
     (-> x .-nodeName keyword)
     (attributes x)
-    (let [children (children x)]
-      (if (empty? children)
-        [(.-innerHTML x)]
-        (map xml->clj children))))))
+    (or
+     (some->> x children not-empty (map xml->clj))
+     (some-> x .-innerHTML .trim not-empty list)))))
+
+(defn- conj-option [existing new]
+  (cond
+   (vector? existing) (conj existing new)
+   existing [existing new]
+   :else new))
+(defn merge-children [attr children]
+  (reduce
+   (fn [m [k v]]
+     (update m k conj-option v))
+   attr
+   children))
+
+(defn xml->map [m]
+  (walk/postwalk
+   #(if (vector? %)
+     (let [[head attr & [first-child :as children]] %]
+       [head
+        (cond
+         (vector? first-child) (merge-children attr children)
+         first-child first-child
+         :else attr)])
+     %)
+   m))
+
+(defn get-rss [edn]
+  (-> edn xml->map (get-in [1 :rss :channel])))
 
 (defn rss []
   (m/then-> (js/fetch "https://www.stuff.co.nz/rss/")
             (.text $)
-            (->> $ xml/loadXml xml->clj prn)))
+            (->> $ xml/loadXml xml->clj get-rss)))
