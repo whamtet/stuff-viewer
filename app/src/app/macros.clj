@@ -1,6 +1,8 @@
 (ns app.macros)
 
 (defmacro then-> [step & steps]
-  `(-> ~step
+  `(as-> ~step ~'$
     ~@(for [step steps]
-       `(.then (fn [~'$] ~step)))))
+       `(if (.-then ~'$)
+         (.then ~'$ (fn [~'$] ~step))
+         ~step))))
