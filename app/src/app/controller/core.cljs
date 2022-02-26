@@ -7,7 +7,7 @@
     [app.macros :as m]))
 
 (defn replace-root [view]
-  (let [el (js/document.getElementById "root")]
+  (let [el (js/document.getElementById "subsection")]
     (set! (.-innerHTML el) "")
     (.append el (html view))))
 

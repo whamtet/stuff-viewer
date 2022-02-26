@@ -25,7 +25,7 @@
   [:div
    (a-f #(js/location.reload)
         [:img {:src (:url image)}])
-   [:div#subsection.poos.wees
+   [:div#subsection
     (map news-item item)]])
 
 (defn home []
