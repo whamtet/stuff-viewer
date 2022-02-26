@@ -9,12 +9,22 @@
   (with-out-str
    (clojure.pprint/pprint s)))
 
+(defn a-f [f & children]
+  [:a {:href "javascript:void(0)"
+       :onclick f} children])
+
+(defn news-item [{:keys [title link description enclosure]}]
+  (let [click-article #(prn 'article link)]
+    [:div
+     (a-f click-article [:h3 title])
+     (a-f click-article [:img {:src (:url enclosure)}])
+     [:p description]]))
+
 (defn rss-page [{:keys [image item]}]
   [:div
-   [:a {:href "#"
-        :onclick #(js/location.reload)}
-    [:img {:src (:url image)}]]
-   [:pre (pprint item)]])
+   (a-f #(js/location.reload)
+        [:img {:src (:url image)}])
+   (map news-item item)])
 
 (defn home []
   (if js/window.IS_ELECTRON
