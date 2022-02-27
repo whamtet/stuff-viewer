@@ -7,9 +7,15 @@
   (filter (complement seq?)
           (rest (tree-seq seq? seq x))))
 
+(defn map->style [m]
+  (string/join "; "
+               (for [[k v] m]
+                 (str (name k) ": " v))))
+
 (defn- set-attrs [el attr]
   (doseq [[k v] attr
-          :let [k (name k)]]
+          :let [k (name k)
+                v (if (map? v) (map->style v) v)]]
     (if (ifn? v)
       (.addEventListener el (.replace k "on" "") v)
       (.setAttribute el k v))))

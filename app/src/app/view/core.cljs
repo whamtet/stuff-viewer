@@ -18,8 +18,9 @@
 (defn news-item [i {:keys [title link description enclosure]}]
   (let [click-article #(controller/view-article link)]
     [:div
-     (a-f click-article [:h3 title])
-     [:h5.d-none {:id (str "comments-" i)} "Comments Enabled"]
+     [:h3
+      (a-f click-article title)
+      [:div.d-none {:id (str "comments-" i)} "Comments"]]
      (a-f click-article [:img {:src (:url enclosure)}])
      [:p description]]))
 
@@ -36,9 +37,9 @@
     (fn [i {:keys [link]}]
       (m/then-> (client.article/allow-comments? link)
                 (when $
-                      (let [id (str "comments-" i)
-                            el (js/document.getElementById id)]
-                        (.setAttribute el "class" "")))))
+                      (-> (str "comments-" i)
+                          js/document.getElementById
+                          (.setAttribute "class" "d-comment")))))
     item)))
 
 (defn home []
