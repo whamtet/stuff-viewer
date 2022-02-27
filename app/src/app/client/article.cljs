@@ -33,33 +33,51 @@
 
 (defn merge-content [[type :as v] src]
   (when (= :img type)
-    (assoc v 1 src)))
+        (assoc v 1 src)))
 
-(defn img->src [x]
-  (-> x :imageTypes first :urlMap vals (nth 3)))
+(def cache (atom {}))
 
-(defn article-data [html]
+(defn set-cache [href html]
   (let [el (js/document.createElement "document")
         _ (set! (.-innerHTML el) html)
         scripts (inner-html-all el "script")
         start-script (some #(when (.includes % "__INITIAL_STATE__") %) scripts)
-        _ (js/eval start-script)
-        display-assets (-> js/__INITIAL_STATE__
-                           js/JSON.parse
-                           js->clj
-                           walk/keywordize-keys
-                           :news
-                           vals
-                           first
-                           :news
-                           :display_assets)
-        lazy-images (filter :lazyImage display-assets)
-        lazy-src (map img->src lazy-images)
-        content (merge-seqs (content el) lazy-src merge-content)]
-    {:title (inner-text el "h1")
+        _ (set! js/window.a
+            (-> start-script
+                (.substring (inc (count to-remove)))
+                js/eval
+                js/JSON.parse))
+        to-remove (re-find #".*?=" start-script)
+        data (-> start-script
+                 (.substring (inc (count to-remove)))
+                 js/eval
+                 js/JSON.parse
+                 js->clj
+                 walk/keywordize-keys
+                 (assoc
+                   :title (inner-text el "h1")
+                   :content (content el)))]
+    ((swap! cache assoc href data) href)))
+
+(defn article-data [{:keys [news title content]}]
+  (let [lazy-src (->> news
+                      vals
+                      first
+                      :news
+                      :display_assets
+                      (filter :lazyImage)
+                      (map #(-> % :imageTypes first :urlMap vals (nth 3))))
+        content (merge-seqs content lazy-src merge-content)]
+    {:title title
      :content content}))
 
+(defn read-cache [href]
+  (or (@cache href)
+      (m/then-> (js/fetch href) (.text $) (set-cache href $))))
+
 (defn fetch-article [href]
-  (m/then-> (js/fetch href)
-            (.text $)
-            (article-data $)))
+  (m/then-> (read-cache href) (article-data $)))
+
+(defn allow-comments? [href]
+  (m/then-> (read-cache href)
+            (-> $ :news vals first :news :allowComments)))
